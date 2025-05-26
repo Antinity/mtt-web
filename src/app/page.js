@@ -12,7 +12,7 @@ export default function Home() {
         <p className="text-sm">(Brought to you by antinity)</p>
       </div>
 
-      <RadiantSphere x="30%" y="50%" size={400} blurRadius={300} color="#0EBCAD" />
+      <RadiantSphere x="30%" y="50%" size={500} blurRadius={300} color="#0EBCAD" />
     </div>
   );
 }

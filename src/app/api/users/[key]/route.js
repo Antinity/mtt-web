@@ -12,7 +12,7 @@ async function findUserByKey(key) {
   return user;
 }
 
-export async function GET(req, { params })  {
+export async function GET(req, { params }) {
   if (!checkApiKey(req)) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
@@ -45,15 +45,21 @@ export async function PUT(req, { params }) {
 
   const user = await findUserByKey(key);
   if (!user) {
-    return new Response(JSON.stringify({ error: "User not found" }), {
-      status: 404,
-    });
+    try {
+      const newUser = new User(body);
+      await newUser.save();
+      return new Response(JSON.stringify(newUser.toObject()), { status: 201 });
+    } catch (err) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: 400,
+      });
+    }
   }
 
   try {
     Object.assign(user, body);
     await user.save();
-    return new Response(JSON.stringify(user), { status: 200 });
+    return new Response(JSON.stringify(user.toObject()), { status: 200 });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 400,
