@@ -4,7 +4,7 @@ import RadiantSphere from "./RadiantSphere";
 const Footer = () => {
   return (
     <footer className="mt-16 relative bottom-0 w-full flex justify-center p-16 border-t border-secondary">
-      <div className="container flex items-center justify-between h-full">
+      <div className="container flex md:items-center flex-col md:flex-row space-y-8 md:space-y-0 justify-between h-full">
         {/* Left: Logo */}
         <div>
           <p className="text-2xl font-bold">Minemen Tier Tests</p>
@@ -24,7 +24,7 @@ const Footer = () => {
         </div>
 
         {/* Right: Nav Links */}
-        <div className="flex flex-col items-start space-y-2">
+        <div className="flex flex-col items-start  space-y-4 md:space-y-2">
           <a href="https://discord.gg/CwtfYEV6p7" target="_blank" rel="noopener noreferrer" className="transition text-foreground hover:text-white">Discord</a>
           <a href="#tier-list" className="transition text-foreground hover:text-white">Tier List</a>
           <a href="terms" className="transition text-foreground hover:text-white">Terms of Service</a>
