@@ -6,6 +6,8 @@ const RadiantSphere = ({
   size = 400,        // Default size in px
   blurRadius = 400,  // Default blur
   color = "rgba(255, 255, 255, 0.5)", // Default color
+  animated = false,
+
 }) => {
   const style = {
     position: "absolute",
@@ -21,7 +23,13 @@ const RadiantSphere = ({
     zIndex: -1,
   };
 
-  return <div style={style} />;
+  let css;
+
+  if (animated) {
+    css="radiantSphereAnim"
+  }
+
+  return <div style={style} className={css} />;
 };
 
 export default RadiantSphere;

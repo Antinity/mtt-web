@@ -1,5 +1,6 @@
 import { Inter } from "next/font/google";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import "./globals.css";
 
 const inter = Inter({
@@ -18,6 +19,7 @@ export default function RootLayout({ children }) {
       <body className={`${inter.className} antialiased`}>
         <Navbar />
         {children}
+        <Footer />
       </body>
     </html>
   );
