@@ -2,16 +2,6 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { checkApiKey } from "@/lib/checkApiKey";
 import { User } from "@/models/User";
 
-async function findUserByKey(key) {
-  // Try discord first
-  let user = await User.findOne({ discord: key });
-  if (user) return user;
-
-  // Then try ign (case-insensitive)
-  user = await User.findOne({ ign: key });
-  return user;
-}
-
 export async function GET(req, { params }) {
   if (!checkApiKey(req)) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -22,7 +12,7 @@ export async function GET(req, { params }) {
   await connectToDatabase();
   const { key } = await params;
 
-  const user = await findUserByKey(key);
+  const user = await User.findOne({ discord: key });
   if (!user) {
     return new Response(JSON.stringify({ error: "User not found" }), {
       status: 404,
@@ -43,7 +33,7 @@ export async function PUT(req, { params }) {
   const { key } = await params;
   const body = await req.json();
 
-  const user = await findUserByKey(key);
+  const user = await User.findOne({ discord: key });
   if (!user) {
     try {
       const newUser = new User(body);
@@ -77,7 +67,7 @@ export async function DELETE(req, { params }) {
   await connectToDatabase();
   const { key } = await params;
 
-  const user = await findUserByKey(key);
+  const user = await User.findOne({ discord: key });
   if (!user) {
     return new Response(JSON.stringify({ error: "User not found" }), {
       status: 404,

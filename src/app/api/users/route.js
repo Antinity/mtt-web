@@ -10,6 +10,20 @@ export async function GET(req) {
   }
 
   await connectToDatabase();
+  
+  const { searchParams } = new URL(req.url);
+  const ign = searchParams.get('ign');
+  
+  if (ign) {
+    const user = await User.findOne({ ign: new RegExp(`^${ign}$`, 'i') });
+    if (!user) {
+      return new Response(JSON.stringify({ error: "User not found" }), {
+        status: 404,
+      });
+    }
+    return new Response(JSON.stringify(user), { status: 200 });
+  }
+  
   const users = await User.find();
   return new Response(JSON.stringify(users), { status: 200 });
 }
