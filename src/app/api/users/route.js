@@ -9,34 +9,37 @@ export async function GET(req) {
   }
 
   await connectToDatabase();
-  
+
   const { searchParams } = new URL(req.url);
-  const ign = searchParams.get('ign');
-  
+  const ign = searchParams.get("ign");
+
   if (ign) {
-    const user = await User.findOne({ ign: new RegExp(`^${ign}$`, 'i') });
+    const user = await User.findOne({ ign: new RegExp(`^${ign}$`, "i") });
     if (!user) {
       return jsonResponse({ error: "User not found" }, 404);
     }
     return jsonResponse(user);
   }
-  
+
   // Extract and validate pagination parameters
-  const page = Math.max(1, parseInt(searchParams.get('page')) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit')) || 20));
+  const page = Math.max(1, parseInt(searchParams.get("page")) || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(searchParams.get("limit")) || 20)
+  );
   const skip = (page - 1) * limit;
-  
+
   // Get paginated users and total count
   const [users, totalUsers] = await Promise.all([
     User.find().skip(skip).limit(limit),
-    User.countDocuments()
+    User.countDocuments(),
   ]);
-  
+
   // Calculate pagination metadata
   const totalPages = Math.ceil(totalUsers / limit);
   const hasNextPage = page < totalPages;
   const hasPrevPage = page > 1;
-  
+
   const response = {
     users,
     pagination: {
@@ -44,10 +47,10 @@ export async function GET(req) {
       totalPages,
       totalUsers,
       hasNextPage,
-      hasPrevPage
-    }
+      hasPrevPage,
+    },
   };
-  
+
   return jsonResponse(response);
 }
 

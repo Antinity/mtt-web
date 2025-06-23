@@ -29,11 +29,10 @@ export async function PUT(req, { params }) {
   const body = await req.json();
 
   try {
-    const user = await User.findOneAndUpdate(
-      { discord: key },
-      body,
-      { new: true, upsert: true },
-    );
+    const user = await User.findOneAndUpdate({ discord: key }, body, {
+      new: true,
+      upsert: true,
+    });
 
     return jsonResponse(user.toObject());
   } catch (err) {
