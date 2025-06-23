@@ -1,12 +1,11 @@
 import { connectToDatabase } from "@/lib/mongodb";
 import { checkApiKey } from "@/lib/checkApiKey";
 import { User } from "@/models/User";
+import { jsonResponse } from "@/lib/apiResponse";
 
 export async function PUT(req, { params }) {
   if (!checkApiKey(req)) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-    });
+    return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
   await connectToDatabase();
@@ -16,9 +15,7 @@ export async function PUT(req, { params }) {
   const { tier } = body;
 
   if (typeof tier !== "number") {
-    return new Response(JSON.stringify({ error: "Tier must be a number" }), {
-      status: 400,
-    });
+    return jsonResponse({ error: "Tier must be a number" }, 400);
   }
 
   try {
@@ -28,10 +25,8 @@ export async function PUT(req, { params }) {
       { upsert: true, new: true }
     );
 
-    return new Response(JSON.stringify(user), { status: 200 });
+    return jsonResponse(user);
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 400,
-    });
+    return jsonResponse({ error: err.message }, 400);
   }
 }

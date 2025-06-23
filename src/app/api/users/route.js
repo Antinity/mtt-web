@@ -1,12 +1,11 @@
 import { connectToDatabase } from "@/lib/mongodb";
 import { checkApiKey } from "@/lib/checkApiKey";
 import { User } from "@/models/User";
+import { jsonResponse } from "@/lib/apiResponse";
 
 export async function GET(req) {
   if (!checkApiKey(req)) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-    });
+    return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
   await connectToDatabase();
@@ -17,11 +16,9 @@ export async function GET(req) {
   if (ign) {
     const user = await User.findOne({ ign: new RegExp(`^${ign}$`, 'i') });
     if (!user) {
-      return new Response(JSON.stringify({ error: "User not found" }), {
-        status: 404,
-      });
+      return jsonResponse({ error: "User not found" }, 404);
     }
-    return new Response(JSON.stringify(user), { status: 200 });
+    return jsonResponse(user);
   }
   
   // Extract and validate pagination parameters
@@ -51,14 +48,12 @@ export async function GET(req) {
     }
   };
   
-  return new Response(JSON.stringify(response), { status: 200 });
+  return jsonResponse(response);
 }
 
 export async function POST(req) {
   if (!checkApiKey(req)) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-    });
+    return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
   await connectToDatabase();
@@ -67,10 +62,8 @@ export async function POST(req) {
   try {
     const user = new User(body);
     await user.save();
-    return new Response(JSON.stringify(user), { status: 201 });
+    return jsonResponse(user, 201);
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 400,
-    });
+    return jsonResponse({ error: err.message }, 400);
   }
 }

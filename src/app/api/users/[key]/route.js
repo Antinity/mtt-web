@@ -1,12 +1,11 @@
 import { connectToDatabase } from "@/lib/mongodb";
 import { checkApiKey } from "@/lib/checkApiKey";
 import { User } from "@/models/User";
+import { jsonResponse } from "@/lib/apiResponse";
 
 export async function GET(req, { params }) {
   if (!checkApiKey(req)) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-    });
+    return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
   await connectToDatabase();
@@ -14,19 +13,15 @@ export async function GET(req, { params }) {
 
   const user = await User.findOne({ discord: key });
   if (!user) {
-    return new Response(JSON.stringify({ error: "User not found" }), {
-      status: 404,
-    });
+    return jsonResponse({ error: "User not found" }, 404);
   }
 
-  return new Response(JSON.stringify(user), { status: 200 });
+  return jsonResponse(user);
 }
 
 export async function PUT(req, { params }) {
   if (!checkApiKey(req)) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-    });
+    return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
   await connectToDatabase();
@@ -40,19 +35,15 @@ export async function PUT(req, { params }) {
       { new: true, upsert: true },
     );
 
-    return new Response(JSON.stringify(user.toObject()), { status: 200 });
+    return jsonResponse(user.toObject());
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 400,
-    });
+    return jsonResponse({ error: err.message }, 400);
   }
 }
 
 export async function DELETE(req, { params }) {
   if (!checkApiKey(req)) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-    });
+    return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
   await connectToDatabase();
@@ -60,9 +51,7 @@ export async function DELETE(req, { params }) {
 
   const user = await User.findOne({ discord: key });
   if (!user) {
-    return new Response(JSON.stringify({ error: "User not found" }), {
-      status: 404,
-    });
+    return jsonResponse({ error: "User not found" }, 404);
   }
 
   await user.deleteOne();
