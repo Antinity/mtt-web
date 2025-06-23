@@ -24,8 +24,34 @@ export async function GET(req) {
     return new Response(JSON.stringify(user), { status: 200 });
   }
   
-  const users = await User.find();
-  return new Response(JSON.stringify(users), { status: 200 });
+  // Extract and validate pagination parameters
+  const page = Math.max(1, parseInt(searchParams.get('page')) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit')) || 20));
+  const skip = (page - 1) * limit;
+  
+  // Get paginated users and total count
+  const [users, totalUsers] = await Promise.all([
+    User.find().skip(skip).limit(limit),
+    User.countDocuments()
+  ]);
+  
+  // Calculate pagination metadata
+  const totalPages = Math.ceil(totalUsers / limit);
+  const hasNextPage = page < totalPages;
+  const hasPrevPage = page > 1;
+  
+  const response = {
+    users,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalUsers,
+      hasNextPage,
+      hasPrevPage
+    }
+  };
+  
+  return new Response(JSON.stringify(response), { status: 200 });
 }
 
 export async function POST(req) {
