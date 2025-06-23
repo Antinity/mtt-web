@@ -33,22 +33,13 @@ export async function PUT(req, { params }) {
   const { key } = await params;
   const body = await req.json();
 
-  const user = await User.findOne({ discord: key });
-  if (!user) {
-    try {
-      const newUser = new User(body);
-      await newUser.save();
-      return new Response(JSON.stringify(newUser.toObject()), { status: 201 });
-    } catch (err) {
-      return new Response(JSON.stringify({ error: err.message }), {
-        status: 400,
-      });
-    }
-  }
-
   try {
-    Object.assign(user, body);
-    await user.save();
+    const user = await User.findOneAndUpdate(
+      { discord: key },
+      body,
+      { new: true, upsert: true },
+    );
+
     return new Response(JSON.stringify(user.toObject()), { status: 200 });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
