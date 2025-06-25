@@ -12,6 +12,9 @@ export async function GET(req) {
 
   const { searchParams } = new URL(req.url);
   const ign = searchParams.get("ign");
+  const gamemode = searchParams.get("gamemode");
+  const tier = searchParams.get("tier");
+  const sortByTier = searchParams.get("sortByTier");
 
   if (ign) {
     const user = await User.findOne({ ign: new RegExp(`^${ign}$`, "i") });
@@ -31,8 +34,28 @@ export async function GET(req) {
     return jsonResponse({ error: "Invalid cursor format" }, 400);
   }
 
-  const users = await User.find(cursor ? { _id: { $gt: cursor } } : {})
-    .sort({ _id: 1 })
+  const filter = cursor ? { _id: { $gt: cursor } } : {};
+
+  if (gamemode) {
+    if (tier != null) {
+      const tierValue = parseInt(tier);
+      if (isNaN(tierValue)) {
+        return jsonResponse({ error: "Invalid tier value" }, 400);
+      }
+      filter[`tiers.${gamemode}`] = tierValue;
+    } else {
+      filter[`tiers.${gamemode}`] = { $exists: true };
+    }
+  }
+
+  const sortOptions = { _id: 1 };
+  if (gamemode && sortByTier) {
+    const sortDirection = sortByTier.toLowerCase() === "desc" ? -1 : 1;
+    sortOptions[`tiers.${gamemode}`] = sortDirection;
+  }
+
+  const users = await User.find(filter)
+    .sort(sortOptions)
     .limit(limit + 1)
     .lean()
     .exec();
