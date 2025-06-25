@@ -25,13 +25,27 @@ export async function GET(req) {
   }
 
   const cursor = searchParams.get("cursor");
+  const page = searchParams.get("page");
   const limit = Math.min(
     100,
     Math.max(1, parseInt(searchParams.get("limit")) || 20)
   );
 
+  const useCursorPagination = cursor !== null;
+  const usePagePagination = page !== null && !useCursorPagination;
+
   if (cursor && !cursor.match(/^[0-9a-fA-F]{24}$/)) {
     return jsonResponse({ error: "Invalid cursor format" }, 400);
+  }
+
+  if (cursor && sortByTier) {
+    return jsonResponse(
+      {
+        error:
+          "sortByTier cannot be used with cursor pagination. Use page-based pagination instead.",
+      },
+      400
+    );
   }
 
   const filter = cursor ? { _id: { $gt: cursor } } : {};
@@ -54,28 +68,61 @@ export async function GET(req) {
     sortOptions[`tiers.${gamemode}`] = sortDirection;
   }
 
-  const users = await User.find(filter)
-    .sort(sortOptions)
-    .limit(limit + 1)
-    .lean()
-    .exec();
+  let response;
 
-  const hasMore = users.length > limit;
+  if (usePagePagination) {
+    const pageNum = parseInt(page);
+    if (isNaN(pageNum) || pageNum < 1) {
+      return jsonResponse({ error: "Page must be a positive integer" }, 400);
+    }
 
-  if (hasMore) {
-    users.pop();
+    const skip = (pageNum - 1) * limit;
+
+    const totalCount = await User.countDocuments(filter);
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasMore = pageNum < totalPages;
+
+    const users = await User.find(filter)
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(limit)
+      .lean()
+      .exec();
+
+    response = {
+      users,
+      pagination: {
+        page: pageNum,
+        totalPages,
+        totalCount,
+        hasMore,
+        limit,
+      },
+    };
+  } else {
+    const users = await User.find(filter)
+      .sort(sortOptions)
+      .limit(limit + 1)
+      .lean()
+      .exec();
+
+    const hasMore = users.length > limit;
+
+    if (hasMore) {
+      users.pop();
+    }
+
+    const nextCursor = users.length > 0 ? users[users.length - 1]._id : null;
+
+    response = {
+      users,
+      pagination: {
+        nextCursor,
+        hasMore,
+        limit,
+      },
+    };
   }
-
-  const nextCursor = users.length > 0 ? users[users.length - 1]._id : null;
-
-  const response = {
-    users,
-    pagination: {
-      nextCursor,
-      hasMore,
-      limit,
-    },
-  };
 
   return jsonResponse(response);
 }
