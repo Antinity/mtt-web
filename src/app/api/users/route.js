@@ -21,33 +21,36 @@ export async function GET(req) {
     return jsonResponse(user);
   }
 
-  // Extract and validate pagination parameters
-  const page = Math.max(1, parseInt(searchParams.get("page")) || 1);
+  const cursor = searchParams.get("cursor");
   const limit = Math.min(
     100,
     Math.max(1, parseInt(searchParams.get("limit")) || 20)
   );
-  const skip = (page - 1) * limit;
 
-  // Get paginated users and total count
-  const [users, totalUsers] = await Promise.all([
-    User.find().skip(skip).limit(limit),
-    User.countDocuments(),
-  ]);
+  if (cursor && !cursor.match(/^[0-9a-fA-F]{24}$/)) {
+    return jsonResponse({ error: "Invalid cursor format" }, 400);
+  }
 
-  // Calculate pagination metadata
-  const totalPages = Math.ceil(totalUsers / limit);
-  const hasNextPage = page < totalPages;
-  const hasPrevPage = page > 1;
+  const users = await User.find(cursor ? { _id: { $gt: cursor } } : {})
+    .sort({ _id: 1 })
+    .limit(limit + 1)
+    .lean()
+    .exec();
+
+  const hasMore = users.length > limit;
+
+  if (hasMore) {
+    users.pop();
+  }
+
+  const nextCursor = users.length > 0 ? users[users.length - 1]._id : null;
 
   const response = {
     users,
     pagination: {
-      currentPage: page,
-      totalPages,
-      totalUsers,
-      hasNextPage,
-      hasPrevPage,
+      nextCursor,
+      hasMore,
+      limit,
     },
   };
 
