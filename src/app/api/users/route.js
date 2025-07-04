@@ -84,7 +84,15 @@ export async function GET(req) {
     const hasMore = pageNum < totalPages;
 
     const users = await User.find(filter)
-      .sort({ _id: 1 })
+      .sort(
+        gamemode && sortByTier
+          ? {
+              [`tiers.${gamemode}`]:
+                sortByTier.toLowerCase() === "desc" ? -1 : 1,
+              _id: 1,
+            }
+          : { _id: 1 }
+      )
       .skip(skip)
       .limit(limit)
       .lean()
@@ -102,14 +110,7 @@ export async function GET(req) {
     };
   } else {
     const users = await User.find(filter)
-      .sort(
-        gamemode && sortByTier
-          ? {
-              [`tiers.${gamemode}`]:
-                sortByTier.toLowerCase() === "desc" ? -1 : 1,
-            }
-          : { _id: 1 }
-      )
+      .sort({ _id: 1 })
       .limit(limit + 1)
       .lean()
       .exec();
