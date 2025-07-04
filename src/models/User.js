@@ -12,5 +12,6 @@ const userSchema = new Schema({
     default: {},
   },
 });
+userSchema.index({ ign: "text" }, { sparse: true });
 
 export const User = mongoose.models.User || mongoose.model("User", userSchema);

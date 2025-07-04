@@ -2,6 +2,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { checkApiKey } from "@/lib/checkApiKey";
 import { User } from "@/models/User";
 import { jsonResponse } from "@/lib/apiResponse";
+import { Types } from "mongoose";
 
 export async function GET(req) {
   if (!checkApiKey(req)) {
@@ -12,18 +13,20 @@ export async function GET(req) {
 
   const { searchParams } = new URL(req.url);
   const ign = searchParams.get("ign");
-  const gamemode = searchParams.get("gamemode");
-  const tier = searchParams.get("tier");
-  const sortByTier = searchParams.get("sortByTier");
-
   if (ign) {
-    const user = await User.findOne({ ign: new RegExp(`^${ign}$`, "i") });
+    const user = await User.findOne({ ign })
+      .collation({ locale: "en", strength: 1 })
+      .lean()
+      .exec();
     if (!user) {
       return jsonResponse({ error: "User not found" }, 404);
     }
     return jsonResponse(user);
   }
 
+  const gamemode = searchParams.get("gamemode");
+  const tier = searchParams.get("tier");
+  const sortByTier = searchParams.get("sortByTier");
   const cursor = searchParams.get("cursor");
   const page = searchParams.get("page");
   const limit = Math.min(
@@ -31,8 +34,8 @@ export async function GET(req) {
     Math.max(1, parseInt(searchParams.get("limit")) || 20)
   );
 
-  const useCursorPagination = cursor !== null;
-  const usePagePagination = page !== null && !useCursorPagination;
+  const useCursorPagination = cursor != null;
+  const usePagePagination = !useCursorPagination && page != null;
 
   if (cursor && !cursor.match(/^[0-9a-fA-F]{24}$/)) {
     return jsonResponse({ error: "Invalid cursor format" }, 400);
@@ -48,7 +51,11 @@ export async function GET(req) {
     );
   }
 
-  const filter = cursor ? { _id: { $gt: cursor } } : {};
+  const filter = {};
+
+  if (cursor) {
+    filter._id = { $gt: new Types.ObjectId(cursor) };
+  }
 
   if (gamemode) {
     if (tier != null) {
@@ -60,12 +67,6 @@ export async function GET(req) {
     } else {
       filter[`tiers.${gamemode}`] = { $exists: true };
     }
-  }
-
-  const sortOptions = { _id: 1 };
-  if (gamemode && sortByTier) {
-    const sortDirection = sortByTier.toLowerCase() === "desc" ? -1 : 1;
-    sortOptions[`tiers.${gamemode}`] = sortDirection;
   }
 
   let response;
@@ -83,7 +84,7 @@ export async function GET(req) {
     const hasMore = pageNum < totalPages;
 
     const users = await User.find(filter)
-      .sort(sortOptions)
+      .sort({ _id: 1 })
       .skip(skip)
       .limit(limit)
       .lean()
@@ -101,7 +102,14 @@ export async function GET(req) {
     };
   } else {
     const users = await User.find(filter)
-      .sort(sortOptions)
+      .sort(
+        gamemode && sortByTier
+          ? {
+              [`tiers.${gamemode}`]:
+                sortByTier.toLowerCase() === "desc" ? -1 : 1,
+            }
+          : { _id: 1 }
+      )
       .limit(limit + 1)
       .lean()
       .exec();
