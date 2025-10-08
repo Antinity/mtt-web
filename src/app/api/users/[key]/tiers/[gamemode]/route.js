@@ -14,18 +14,23 @@ export async function PUT(req, { params }) {
   const body = await req.json();
   const { tier } = body;
 
-  if (typeof tier !== "number") {
-    return jsonResponse({ error: "Tier must be a number" }, 400);
-  }
-
   try {
-    const user = await User.findOneAndUpdate(
-      { discord: key },
-      { [`tiers.${gamemode}`]: tier },
-      { upsert: true, new: true }
-    );
-
-    return jsonResponse(user);
+    if (typeof tier === "number") {
+      const user = await User.findOneAndUpdate(
+        { discord: key },
+        { [`tiers.${gamemode}`]: tier },
+        { upsert: true, new: true }
+      );
+      return jsonResponse(user);
+    } else if (tier === null) {
+      const user = await User.findOneAndUpdate(
+        { discord: key },
+        { $unset: { [`tiers.${gamemode}`]: "" } },
+        { new: true }
+      );
+      return jsonResponse(user);
+    }
+    return jsonResponse({ error: "Invalid tier" }, 400);
   } catch (err) {
     return jsonResponse({ error: err.message }, 400);
   }
